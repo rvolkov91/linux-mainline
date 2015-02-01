@@ -1460,11 +1460,21 @@ static int i8042_remove(struct platform_device *dev)
 	return 0;
 }
 
+#ifdef SERIO_I8042_DT
+static struct of_device_id i8042_dt_ids[] = {
+	{ .compatible = "intel,8042" },
+	{ /* Sentinel */ },
+};
+#endif
+
 static struct platform_driver i8042_driver = {
 	.driver		= {
 		.name	= "i8042",
 #ifdef CONFIG_PM
 		.pm	= &i8042_pm_ops,
+#endif
+#ifdef SERIO_I8042_DT
+		.of_match_table = i8042_dt_ids,
 #endif
 	},
 	.remove		= i8042_remove,
