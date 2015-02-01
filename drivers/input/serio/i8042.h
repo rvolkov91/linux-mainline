@@ -28,6 +28,9 @@
 #include "i8042-x86ia64io.h"
 #elif defined(CONFIG_UNICORE32)
 #include "i8042-unicore32io.h"
+#elif defined(CONFIG_ARCH_MIGHT_HAVE_PC_SERIO) && defined(CONFIG_USE_OF)
+#define SERIO_I8042_DT
+#include "i8042-dt.h"
 #else
 #include "i8042-io.h"
 #endif
