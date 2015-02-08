@@ -1,0 +1,26 @@
+Intel 8042 Keyboard Controller
+
+Required properties:
+- compatible: should be "intel,8042"
+- regs: memory for keyboard controller
+- interrupts: usually, two interrupts should be specified (keyboard and aux).
+	However, only one interrupt is also allowed in case of absence of the
+	physical port in the controller. The i8042 driver must be loaded with
+	nokbd/noaux option in this case.
+- interrupt-names: interrupt names corresponding to numbers in the list.
+	"kbd" is the keyboard interrupt and "aux" is the auxiliary (mouse)
+	interrupt.
+- command-reg: offset in memory for command register
+- status-reg: offset in memory for status register
+- data-reg: offset in memory for data register
+
+Example:
+	i8042@d8008800 {
+		compatible = "intel,8042";
+		regs = <0xd8008800 0x100>;
+		interrupts = <23>, <4>;
+		interrupt-names = "kbd", "aux";
+		command-reg = <0x04>;
+		status-reg = <0x04>;
+		data-reg = <0x00>;
+	};
