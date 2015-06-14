@@ -1442,8 +1442,27 @@ static int __init i8042_probe(struct platform_device *dev)
 {
 	int error;
 
-	i8042_platform_device = dev;
+	if (i8042_platform_device) {
+		printk("%s: multiple controllers found, ignoring '%s'\n",
+			__func__, dev->name);
+		return 0;
+	}
+#ifdef SERIO_I8042_OF
+	if (!dev->dev.of_node) {
+		printk("%s: non-OF device found, ignoring '%s'\n",
+			__func__, dev->name);
+		return 0;
+	}
 
+	error = i8042_platform_probe(dev);
+	if (error)
+		return error;
+#endif
+	error = i8042_controller_check();
+	if (error)
+		return error;
+
+	i8042_platform_device = dev;
 	if (i8042_reset) {
 		error = i8042_controller_selftest();
 		if (error)
@@ -1488,9 +1507,17 @@ static int __init i8042_probe(struct platform_device *dev)
 
 static int i8042_remove(struct platform_device *dev)
 {
+	if (dev != i8042_platform_device) {
+		dbg("%s: ignoring device %s\n", __func__, dev->name);
+		return 0;
+	}
+
 	i8042_unregister_ports();
 	i8042_free_irqs();
 	i8042_controller_reset(false);
+#ifdef SERIO_I8042_OF
+	i8042_platform_remove(dev);
+#endif
 	i8042_platform_device = NULL;
 
 	return 0;
@@ -1501,6 +1528,9 @@ static struct platform_driver i8042_driver = {
 		.name	= "i8042",
 #ifdef CONFIG_PM
 		.pm	= &i8042_pm_ops,
+#endif
+#ifdef SERIO_I8042_OF
+		.of_match_table = i8042_of_match,
 #endif
 	},
 	.remove		= i8042_remove,
@@ -1514,15 +1544,16 @@ static int __init i8042_init(void)
 
 	dbg_init();
 
+	i8042_platform_device = NULL;
 	err = i8042_platform_init();
 	if (err)
 		return err;
 
-	err = i8042_controller_check();
-	if (err)
-		goto err_platform_exit;
-
+#ifdef SERIO_I8042_OF
+	pdev = ERR_PTR(platform_driver_probe(&i8042_driver, i8042_probe));
+#else
 	pdev = platform_create_bundle(&i8042_driver, i8042_probe, NULL, 0, NULL, 0);
+#endif
 	if (IS_ERR(pdev)) {
 		err = PTR_ERR(pdev);
 		goto err_platform_exit;
@@ -1539,7 +1570,9 @@ static int __init i8042_init(void)
 
 static void __exit i8042_exit(void)
 {
+#ifndef SERIO_I8042_OF
 	platform_device_unregister(i8042_platform_device);
+#endif
 	platform_driver_unregister(&i8042_driver);
 	i8042_platform_exit();
 
