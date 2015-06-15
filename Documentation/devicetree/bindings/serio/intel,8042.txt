@@ -1,0 +1,82 @@
+* Intel 8042 interface
+
+This is an attempt to make a compatible binding with existing implementation
+from SPARC and PowerPC, regulated by the Open Firmware standard. Since new
+devices like ARM SoCs are using the newer Flattened Device Tree, this binding
+should be also compatible with ePAPR, by introducing the 'compatible' property.
+
+Required properties:
+- #address-cells: Must be <1>, since the address for input devices is virtual.
+
+- #size-cells: Must be <0>, since the size is not applicable for the virtual
+  address.
+
+- compatible: Should be "intel,8042".
+
+- reg: Specifies the base address and size of the interface registers in the
+  following order:
+  - DATA: The serial data buffer address.
+  - COMMAND/STATUS: Has the status of the keyboard controller and interface,
+    allows to send commands to the controller.
+
+Optional properties:
+- interrupts: One (keyboard) or two (keyboard and auxiliary) interrupts.
+
+- interrupt-names: names of interrupts, must be "kbd", "aux". If not specified,
+  the first interrupt is "kbd", and the second is "aux".
+
+Child nodes:
+The i8042 interface may control input devices such as keyboard and mouse. Each
+input device is represented by a child node. The input device could be
+identified by the 'compatible' property or the node name (obsolete).
+
+Required properties:
+- reg: Specifies the device virtual address. These numbers should not be
+  duplicated.
+- compatible: should be "pnpPNP,303" for keyboard, and "pnpPNP,f03" for mouse.
+
+Optional properties:
+- interrupts: Specifies the interrupt number for the device. Overwrites the
+  value from the parent node.
+
+Examples:
+
+// Most preferred way
+ps2@d8008800 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "intel,8042";
+	reg = <0xd8008800 0x1>, <0xd8008804 0x1>;
+	interrupts = <23>, <4>;
+	interrupt-names = "kbd", "aux";
+
+	keyboard@0 {
+		reg = <0x0>;
+		compatible = "pnpPNP,303";
+	};
+
+	mouse@1 {
+		reg = <0x1>;
+		compatible = "pnpPNP,f03";
+	};
+};
+
+// PowerPC
+i8042@60 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x1 0x60 0x1 0x1 0x64 0x1>;
+	interrupts = <1 3 12 3>;
+	interrupt-parent = <&i8259>;
+	// 'compatible' property has to be added by the platform code
+
+	keyboard@0 {
+		reg = <0x0>;
+		compatible = "pnpPNP,303";
+	};
+
+	mouse@1 {
+		reg = <0x1>;
+		compatible = "pnpPNP,f03";
+	};
+};
