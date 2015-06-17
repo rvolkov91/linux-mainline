@@ -197,6 +197,25 @@
 			};
 		};
 
+		i8042@d8008800 {
+			#size-cells = <0>;
+			#address-cells = <1>;
+			compatible = "intel,8042";
+			reg = <0xd8008800 0x1>, <0xd8008804 0x1>;
+			interrupts = <23>, <4>;
+			interrupt-names = "kbd", "aux";
+
+			keyboard@0 {
+				reg = <0x0>;
+				compatible = "pnpPNP,303";
+			};
+
+			mouse@1 {
+				reg = <0x1>;
+				compatible = "pnpPNP,f03";
+			};
+		};
+
 		timer@d8130100 {
 			compatible = "via,vt8500-timer";
 			reg = <0xd8130100 0x28>;
