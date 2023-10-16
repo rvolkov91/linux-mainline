@@ -9,7 +9,8 @@
 
 #include "sfdp.h"
 
-#define SPI_NOR_MAX_ID_LEN	6
+#define SPI_NOR_MAX_RAW_ID_LEN	6
+#define SPI_NOR_MAX_ID_LEN	12
 
 /* Standard SPI NOR flash operations. */
 #define SPI_NOR_READID_OP(naddr, ndummy, buf, len)			\
@@ -443,6 +444,7 @@ struct spi_nor_fixups {
  * @id:             the flash's ID bytes. The first three bytes are the
  *                  JEDIC ID. JEDEC ID zero means "no ID" (mostly older chips).
  * @id_len:         the number of bytes of ID.
+ * @cc_len:         the number of continuation codes before ID.
  * @sector_size:    the size listed here is what works with SPINOR_OP_SE, which
  *                  isn't necessarily called a "sector" by the vendor.
  * @n_sectors:      the number of sectors.
@@ -503,8 +505,9 @@ struct spi_nor_fixups {
  */
 struct flash_info {
 	char *name;
-	u8 id[SPI_NOR_MAX_ID_LEN];
+	u8 id[SPI_NOR_MAX_RAW_ID_LEN];
 	u8 id_len;
+	u8 cc_len;
 	unsigned sector_size;
 	u16 n_sectors;
 	u16 page_size;
@@ -547,13 +550,15 @@ struct flash_info {
 #define SPI_NOR_ID_2ITEMS(_id) ((_id) >> 8) & 0xff, (_id) & 0xff
 #define SPI_NOR_ID_3ITEMS(_id) ((_id) >> 16) & 0xff, SPI_NOR_ID_2ITEMS(_id)
 
-#define SPI_NOR_ID(_jedec_id, _ext_id)					\
+#define SPI_NOR_ID(_jedec_id, _ext_id, _cc_len)				\
 	.id = { SPI_NOR_ID_3ITEMS(_jedec_id), SPI_NOR_ID_2ITEMS(_ext_id) }, \
-	.id_len = !(_jedec_id) ? 0 : (3 + ((_ext_id) ? 2 : 0))
+	.id_len = !(_jedec_id) ? 0 : (3 + ((_ext_id) ? 2 : 0)),		\
+	.cc_len = _cc_len
 
-#define SPI_NOR_ID6(_jedec_id, _ext_id)					\
+#define SPI_NOR_ID6(_jedec_id, _ext_id, _cc_len)			\
 	.id = { SPI_NOR_ID_3ITEMS(_jedec_id), SPI_NOR_ID_3ITEMS(_ext_id) }, \
-	.id_len = 6
+	.id_len = 6,							\
+	.cc_len = _cc_len
 
 #define SPI_NOR_GEOMETRY(_sector_size, _n_sectors, _n_banks)		\
 	.sector_size = (_sector_size),					\
@@ -562,16 +567,16 @@ struct flash_info {
 	.n_banks = (_n_banks)
 
 /* Used when the "_ext_id" is two bytes at most */
-#define INFO(_jedec_id, _ext_id, _sector_size, _n_sectors)		\
-	SPI_NOR_ID((_jedec_id), (_ext_id)),				\
+#define INFO(_jedec_id, _ext_id, _cc_len, _sector_size, _n_sectors)	\
+	SPI_NOR_ID((_jedec_id), (_ext_id), (_cc_len)),			\
 	SPI_NOR_GEOMETRY((_sector_size), (_n_sectors), 1),
 
-#define INFOB(_jedec_id, _ext_id, _sector_size, _n_sectors, _n_banks)	\
-	SPI_NOR_ID((_jedec_id), (_ext_id)),				\
+#define INFOB(_jedec_id, _ext_id, _cc_len, _sector_size, _n_sectors, _n_banks)	\
+	SPI_NOR_ID((_jedec_id), (_ext_id), (_cc_len)),			\
 	SPI_NOR_GEOMETRY((_sector_size), (_n_sectors), (_n_banks)),
 
-#define INFO6(_jedec_id, _ext_id, _sector_size, _n_sectors)		\
-	SPI_NOR_ID6((_jedec_id), (_ext_id)),				\
+#define INFO6(_jedec_id, _ext_id, _cc_len, _sector_size, _n_sectors)	\
+	SPI_NOR_ID6((_jedec_id), (_ext_id), (_cc_len)),			\
 	SPI_NOR_GEOMETRY((_sector_size), (_n_sectors), 1),
 
 #define CAT25_INFO(_sector_size, _n_sectors, _page_size, _addr_nbytes)	\

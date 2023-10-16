@@ -2033,12 +2033,18 @@ static const struct flash_info *spi_nor_match_id(struct spi_nor *nor,
 {
 	const struct flash_info *part;
 	unsigned int i, j;
+	const u8 *raw_id;
 
 	for (i = 0; i < ARRAY_SIZE(manufacturers); i++) {
 		for (j = 0; j < manufacturers[i]->nparts; j++) {
 			part = &manufacturers[i]->parts[j];
-			if (part->id_len &&
-			    !memcmp(part->id, id, part->id_len)) {
+			raw_id = id;
+
+			while (raw_id != id + part->cc_len && *raw_id == 0x7f)
+				raw_id++;
+
+			if (part->id_len && raw_id == id + part->cc_len &&
+			    !memcmp(part->id, raw_id, part->id_len)) {
 				nor->manufacturer = manufacturers[i];
 				return part;
 			}
