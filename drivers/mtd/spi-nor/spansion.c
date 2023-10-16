@@ -63,6 +63,16 @@
 		   SPI_MEM_OP_NO_DUMMY,					\
 		   SPI_MEM_OP_NO_DATA)
 
+#define FRAM_INFO2(_jedec_id, _cc_len, _fram_size)			\
+		.id = {							\
+			((_jedec_id) >> 8) & 0xff,                      \
+			(_jedec_id) & 0xff                              \
+			},						\
+		.id_len = 2,						\
+		.cc_len = _cc_len,					\
+		SPI_NOR_GEOMETRY((_fram_size), 1, 1),			\
+		.flags = SPI_NOR_NO_ERASE
+
 /**
  * struct spansion_nor_params - Spansion private parameters.
  * @clsr:	Clear Status Register or Clear Program and Erase Failure Flag
@@ -878,8 +888,7 @@ static const struct flash_info spansion_nor_parts[] = {
 		MFR_FLAGS(USE_CLPEF)
 		FLAGS(NO_CHIP_ERASE)
 		.fixups = &s25hx_t_fixups },
-	{ "cy15x104q",  INFO6(0x042cc2, 0x7f7f7f, 0, 512 * 1024, 1)
-		FLAGS(SPI_NOR_NO_ERASE) },
+	{ "cy15x104q",   FRAM_INFO2(0x2cc2,   6, 512 * 1024) },
 	{ "s28hl512t",   INFO(0x345a1a,      0, 0, 0, 0)
 		PARSE_SFDP
 		MFR_FLAGS(USE_CLPEF)
