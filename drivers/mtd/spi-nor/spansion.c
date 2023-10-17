@@ -888,6 +888,7 @@ static const struct flash_info spansion_nor_parts[] = {
 		MFR_FLAGS(USE_CLPEF)
 		FLAGS(NO_CHIP_ERASE)
 		.fixups = &s25hx_t_fixups },
+	{ "cy15x102q",   FRAM_INFO2(0x25c2,   6, 256 * 1024) },
 	{ "cy15x104q",   FRAM_INFO2(0x2cc2,   6, 512 * 1024) },
 	{ "s28hl512t",   INFO(0x345a1a,      0, 0, 0, 0)
 		PARSE_SFDP
