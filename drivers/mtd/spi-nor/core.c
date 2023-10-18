@@ -21,6 +21,7 @@
 #include <linux/sizes.h>
 #include <linux/slab.h>
 #include <linux/spi/flash.h>
+#include <linux/minmax.h>
 
 #include "core.h"
 
@@ -436,6 +437,35 @@ int spi_nor_read_id(struct spi_nor *nor, u8 naddr, u8 ndummy, u8 *id,
 						    SPI_NOR_MAX_ID_LEN);
 	}
 	return ret;
+}
+
+/**
+ * spi_nor_get_id() - Get the JEDEC ID including continuation codes.
+ * @nor:	pointer to 'struct spi_nor'
+ * @buf:	pointer to a buffer to receive data. The buffer size must be at
+ *		least SPI_NOR_MAX_ID_LEN.
+ *
+ * Retrieves device id bytes from the flash info structure first, and if empty,
+ * from the buffer holding the response from RDID command.
+ *
+ * Return: Copied data length.
+ */
+size_t spi_nor_get_id(struct spi_nor *nor, u8 *buf)
+{
+	u8 cc_len = 0, id_len;
+
+	if (nor->info->id_len) {
+		cc_len = min_t(u8, nor->info->cc_len, SPI_NOR_MAX_ID_LEN);
+		id_len = min_t(u8, nor->info->id_len,
+			       SPI_NOR_MAX_ID_LEN - cc_len);
+		memset(buf, 0x7f, cc_len);
+		memcpy(buf + cc_len, nor->info->id, id_len);
+	} else {
+		id_len = SPI_NOR_MAX_ID_LEN;
+		memcpy(buf, nor->id, id_len);
+	}
+
+	return cc_len + id_len;
 }
 
 /**
